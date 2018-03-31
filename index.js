@@ -66,7 +66,7 @@ module.exports = function dot() {
         outPush(chalk.red(dashes) + '\n');
         outPush(chalk.cyan('  operator: ' + diag.operator) + '\n');
         outPush(chalk.cyan('  expected: ' + diag.expected) + '\n');
-        outPush(chalk.cyan('  actual: ' + diag.actual) + '\n');
+        outPush(chalk.cyan('  actual:   ' + diag.actual) + '\n');
         outPush(chalk.cyan('  at: ' + diag.at) + '\n');
 
         outPush(chalk.white('...') + '\n');
