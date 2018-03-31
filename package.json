@@ -11,7 +11,7 @@
     "tap",
     "dot",
     "tap-dot",
-    "dot-reporter"
+    "dot-reporter",
     "reporter",
     "tape",
     "test"
@@ -31,9 +31,9 @@
     "tap-spot": "bin/cmd.js"
   },
   "dependencies": {
-    "chalk": "^1.1.3",
+    "chalk": "^2.3.2",
     "duplexer": "^0.1.1",
-    "tap-parser": "^3.0.3",
+    "tap-parser": "^7.0.0",
     "through2": "^2.0.1"
   }
 }

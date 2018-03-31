@@ -5,6 +5,19 @@ const parser = require('tap-parser');
 const duplexer = require('duplexer');
 const chalk = require('chalk');
 
+const white = chalk.white;
+const yellow = chalk.hex('cdcd00');
+const green = chalk.hex('00cd00');
+const blue = chalk.hex('0cdcd');
+const red = chalk.hex('cd0000');
+
+const symbols = {
+  skip: yellow(','),
+  ok: green('.'),
+  todo: blue('!'),
+  fail: red('×')
+};
+
 function strPadLen(str, char, len) {
   str = String(str);
   const space = fill(char, len - str.length);
@@ -17,20 +30,19 @@ function fill(char, len) {
   return str;
 }
 
-module.exports = function dot() {
+module.exports = function spot() {
   const out = through();
-  const tap = parser();
+  const tap = new parser();
 
   const stream = duplexer(tap, out);
 
   const extra = [];
-  let assertCount = 0;
   let lastComment;
 
   out.push('\n');
 
   function outPush(str) {
-    out.push('  ' + str);
+    out.push('  ' + str + '\n');
   }
 
   tap.on('comment', function(comment) {
@@ -38,9 +50,19 @@ module.exports = function dot() {
   });
 
   tap.on('assert', function(res) {
-    // console.log('test');
-    const char = res.ok ? chalk.green('.') : chalk.red('x');
-    (++assertCount > 1) ? out.push(char) : outPush(char);
+    let char;
+
+    if (res.skip) {
+      char = symbols.skip;
+    } else if (res.todo) {
+      char = symbols.todo;
+    } else if (res.ok) {
+      char = symbols.ok;
+    } else {
+      char = symbols.fail;
+    }
+
+    out.push(char);
   });
 
   tap.on('extra', function(str) {
@@ -51,61 +73,59 @@ module.exports = function dot() {
     const fails = res.failures;
     const failCount = fails.length;
 
-    if(failCount || !assertCount) {
-      stream.failed = true;
+    outPush('\n');
 
-      outPush('\n\n\n');
+    if (failCount) {
+      fails.forEach(function (fail) {
+        const { operator, expected, actual, at } = fail.diag;
 
-      fails.forEach(function(failure) {
-        outPush(chalk.white('---') + '\n');
-        const diag = failure.diag;
-        const name = 'x ' + failure.name;
-        const dashes = fill('-', name.length);
+        outPush(red(`✖ ${fail.name}`));
+        operator && outPush(`${red('|') + blue(' operator:')} ${operator}`);
+        expected && outPush(`${red('|') + blue(' expected:')} ${expected}`);
+        actual   && outPush(`${red('|') + blue('   actual:')} ${actual}`);
+        at       && outPush(`${red('|') + blue('       at:')} ${at}`);
 
-        outPush(chalk.red(name) + '\n');
-        outPush(chalk.red(dashes) + '\n');
-        outPush(chalk.cyan('  operator: ' + diag.operator) + '\n');
-        outPush(chalk.cyan('  expected: ' + diag.expected) + '\n');
-        outPush(chalk.cyan('  actual:   ' + diag.actual) + '\n');
-        outPush(chalk.cyan('  at: ' + diag.at) + '\n');
-
-        outPush(chalk.white('...') + '\n');
+        outPush('');
       });
 
       outputExtra();
-
-      statsOutput();
-
-      const past = (failCount === 1) ? 'was' : 'were';
-      const plural = (failCount === 1) ? 'failure' : 'failures';
-
-      outPush('\n\n');
-      outPush(chalk.red('Failed Tests: '));
-      outPush('There ' + past + ' ' + chalk.red(failCount) + ' ' + plural + '\n\n');
-
-      fails.forEach(function(error) {
-        outPush('  ' + chalk.red('x ' + error.name) + '\n');
-      });
-
-      outPush('\n');
-    } else {
-      statsOutput();
-
-      outPush('\n\n');
-      outPush(chalk.green('Pass!') + '\n');
     }
 
+    statsOutput();
+
     function statsOutput() {
-      const total = String(res.count || 0);
-      const pass = String(res.pass || 0);
-      const fail = String(res.fail || 0);
+      try {
+        const stats = {
+          tests: String(res.count || 0),
+          skipped: String(res.skip || 0),
+          pass: String(res.pass || 0),
+          todo: String(res.todo || 0),
+          fail: String(res.fail || 0)
+        };
 
-      const max = Math.max(total.length, Math.max(pass.length, fail.length));
+        const max = Math.max(...Object.values(stats).map(v => v.length));
 
-      outPush('\n\n');
-      outPush(strPadLen(total, ' ', max) + ' tests\n');
-      outPush(chalk.green(strPadLen(pass, ' ', max) + ' passed\n'));
-      if(fail !== '0') { outPush(chalk.red(strPadLen(fail, ' ', max) + ' failed')); }
+        outPush(strPadLen(stats.tests, ' ', max) + ' tests');
+
+        if (stats.skipped !== '0') {
+          outPush(yellow(strPadLen(stats.skipped, ' ', max) + ' skipped'));
+        }
+
+        outPush(green(strPadLen(stats.pass, ' ', max) + ' passed'));
+
+        if (stats.todo !== '0') {
+          outPush(blue(strPadLen(stats.todo, ' ', max) + ' todo'));
+        }
+
+        if (stats.fail !== '0') {
+          outPush(red(strPadLen(stats.fail, ' ', max) + ' failed'));
+        }
+
+        outPush('\n');
+
+      } catch (e) {
+        console.error(e);
+      }
     }
   });
 
