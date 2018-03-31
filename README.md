@@ -1,14 +1,8 @@
 # tap-spot
 
-Formatted TAP output with dots ...
+Compact dot reporter for TAP output. Supports skip and todo, reports errors and final stats.
 
-**Passed tests**
-
-![Passed tests](https://i.cloudup.com/NUrIyLYHct.png)
-
-**Failed tests**
-
-![Failed tests](https://i.cloudup.com/70SmvILs9I.png)
+![Screenshot of tap-spot output](https://i.imgur.com/tvan2YY.png)
 
 ## Install
 

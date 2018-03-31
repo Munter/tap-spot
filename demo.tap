@@ -1,0 +1,38 @@
+TAP version 13
+ok whatever
+ok whatever
+ok whatever
+ok whatever
+not ok 1 addition
+  ---
+    operator: plus
+    expected: 2
+    actual: 3
+    at: index.js:4:1
+  ...
+
+ok whatever
+ok whatever
+
+not ok 2 subtraction # SKIP
+  ---
+    operator: plus
+    expected: 0
+    actual: 1
+    at: index.js:4:1
+  ...
+
+ok whatever
+ok whatever
+
+not ok 3 division # TODO
+  ---
+    operator: plus
+    expected: 0
+    actual: NaN
+    at: index.js:4:1
+  ...
+ok whatever
+ok whatever
+
+1..1
