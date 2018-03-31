@@ -36,18 +36,11 @@ module.exports = function spot() {
 
   const stream = duplexer(tap, out);
 
-  const extra = [];
-  let lastComment;
-
   out.push('\n');
 
   function outPush(str) {
     out.push('  ' + str + '\n');
   }
-
-  tap.on('comment', function(comment) {
-    lastComment = comment;
-  });
 
   tap.on('assert', function(res) {
     let char;
@@ -65,17 +58,12 @@ module.exports = function spot() {
     out.push(char);
   });
 
-  tap.on('extra', function(str) {
-    if(str !== '') { extra.push(str); }
-  });
-
   tap.on('complete', function(res) {
     const fails = res.failures;
-    const failCount = fails.length;
 
     outPush('\n');
 
-    if (failCount) {
+    if (fails.length > 0) {
       fails.forEach(function (fail) {
         const { operator, expected, actual, at } = fail.diag;
 
@@ -87,51 +75,36 @@ module.exports = function spot() {
 
         outPush('');
       });
-
-      outputExtra();
     }
 
-    statsOutput();
+    const stats = {
+      tests: String(res.count || 0),
+      skipped: String(res.skip || 0),
+      pass: String(res.pass || 0),
+      todo: String(res.todo || 0),
+      fail: String(res.fail || 0)
+    };
 
-    function statsOutput() {
-      try {
-        const stats = {
-          tests: String(res.count || 0),
-          skipped: String(res.skip || 0),
-          pass: String(res.pass || 0),
-          todo: String(res.todo || 0),
-          fail: String(res.fail || 0)
-        };
+    const max = Math.max(...Object.values(stats).map(v => v.length));
 
-        const max = Math.max(...Object.values(stats).map(v => v.length));
+    outPush(strPadLen(stats.tests, ' ', max) + ' tests');
 
-        outPush(strPadLen(stats.tests, ' ', max) + ' tests');
-
-        if (stats.skipped !== '0') {
-          outPush(yellow(strPadLen(stats.skipped, ' ', max) + ' skipped'));
-        }
-
-        outPush(green(strPadLen(stats.pass, ' ', max) + ' passed'));
-
-        if (stats.todo !== '0') {
-          outPush(blue(strPadLen(stats.todo, ' ', max) + ' todo'));
-        }
-
-        if (stats.fail !== '0') {
-          outPush(red(strPadLen(stats.fail, ' ', max) + ' failed'));
-        }
-
-        outPush('\n');
-
-      } catch (e) {
-        console.error(e);
-      }
+    if (stats.skipped !== '0') {
+      outPush(yellow(strPadLen(stats.skipped, ' ', max) + ' skipped'));
     }
+
+    outPush(green(strPadLen(stats.pass, ' ', max) + ' passed'));
+
+    if (stats.todo !== '0') {
+      outPush(blue(strPadLen(stats.todo, ' ', max) + ' todo'));
+    }
+
+    if (stats.fail !== '0') {
+      outPush(red(strPadLen(stats.fail, ' ', max) + ' failed'));
+    }
+
+    outPush('\n');
   });
-
-  function outputExtra() {
-    console.log(extra.join('\n'));
-  }
 
   return stream;
 };
