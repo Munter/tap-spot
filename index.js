@@ -64,6 +64,8 @@ module.exports = function spot() {
     outPush('\n');
 
     if (fails.length > 0) {
+      stream.failed = true;
+
       fails.forEach(function (fail) {
         const { operator, expected, actual, at } = fail.diag;
 
