@@ -65,9 +65,6 @@ module.exports = function spot() {
   tap.on('complete', function(res) {
     const fails = res.failures.filter(f => !todos.find(t => t === f));
 
-    console.log('fails', fails.length);
-    console.log('todos', todos.length);
-
     outPush('\n');
 
     if (todos.length > 0) {
