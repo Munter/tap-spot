@@ -1,6 +1,6 @@
 {
   "name": "tap-spot",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Compact dot reporter for TAP output. Supports skip and todo",
   "main": "./bin/dot.js",
   "repository": {
