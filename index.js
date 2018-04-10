@@ -34,6 +34,9 @@ module.exports = function spot() {
   const out = through();
   const tap = new parser();
 
+  // Hack to collect todo's for later filtering them out of the failures array
+  const todos = [];
+
   const stream = duplexer(tap, out);
 
   out.push('\n');
@@ -48,6 +51,7 @@ module.exports = function spot() {
     if (res.skip) {
       char = symbols.skip;
     } else if (res.todo) {
+      todos.push(res);
       char = symbols.todo;
     } else if (res.ok) {
       char = symbols.ok;
@@ -59,9 +63,26 @@ module.exports = function spot() {
   });
 
   tap.on('complete', function(res) {
-    const fails = res.failures;
+    const fails = res.failures.filter(f => !todos.find(t => t === f));
+
+    console.log('fails', fails.length);
+    console.log('todos', todos.length);
 
     outPush('\n');
+
+    if (todos.length > 0) {
+      todos.forEach(function (todo) {
+        const { operator, expected, actual, at } = todo.diag;
+
+        outPush(blue(`! TODO ${todo.name}`));
+        operator && outPush(`${blue('·') + yellow(' operator:')} ${operator}`);
+        expected && outPush(`${blue('·') + yellow(' expected:')} ${expected}`);
+        actual   && outPush(`${blue('·') + yellow('   actual:')} ${actual}`);
+        at       && outPush(`${blue('·') + yellow('       at:')} ${at}`);
+
+        outPush('');
+      });
+    }
 
     if (fails.length > 0) {
       stream.failed = true;
@@ -69,7 +90,7 @@ module.exports = function spot() {
       fails.forEach(function (fail) {
         const { operator, expected, actual, at } = fail.diag;
 
-        outPush(red(`✖ ${fail.name}`));
+        outPush(red(`✖ FAIL ${fail.name}`));
         operator && outPush(`${red('|') + blue(' operator:')} ${operator}`);
         expected && outPush(`${red('|') + blue(' expected:')} ${expected}`);
         actual   && outPush(`${red('|') + blue('   actual:')} ${actual}`);
@@ -84,7 +105,7 @@ module.exports = function spot() {
       skipped: String(res.skip || 0),
       pass: String(res.pass || 0),
       todo: String(res.todo || 0),
-      fail: String(res.fail || 0)
+      fail: String(fails.length || 0)
     };
 
     const max = Math.max(...Object.values(stats).map(v => v.length));
